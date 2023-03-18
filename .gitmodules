@@ -1,3 +1,6 @@
 [submodule "helpers"]
 	path = helpers
 	url = https://github.com/johanneskastl/helpers.git
+[submodule "ansible/roles/johanneskastl.reboot"]
+	path = ansible/roles/johanneskastl.reboot
+	url = https://github.com/johanneskastl/ansible-role-reboot.git
