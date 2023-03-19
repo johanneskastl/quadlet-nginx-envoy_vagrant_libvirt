@@ -1,0 +1,51 @@
+- name: Setup quadlet demo machine
+  hosts: all
+  become: true
+
+  tasks:
+
+  - name: Get machine architecture and save it as a fact
+    ansible.builtin.set_fact:
+      repository_arch: "{{ ansible_architecture if ansible_architecture == 'x86_64' else 'aarch64' }}"
+
+  - name: Add the Kubernetes YUM repo
+    ansible.builtin.yum_repository:
+      name: Kubernetes
+      description: Kubernetes
+      baseurl: "https://packages.cloud.google.com/yum/repos/kubernetes-el7-{{ repository_arch }}"
+      gpgcheck: true
+      gpgkey: https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+  - name: Install packages
+    ansible.builtin.package:
+      name:
+      - podman
+      - python3-cryptography
+      - kubectl
+      - bash-completion
+
+  - name: Copy the Quadlet files
+    ansible.builtin.copy:
+      src: quadlet-files/
+      dest: /etc/containers/systemd
+      owner: root
+      group: root
+      mode: '0644'
+    notify:
+      - Restart the Quadlet Service
+
+  - name: Run daemon reload to make Quadlet create the service files
+    ansible.builtin.systemd:
+      daemon_reload: yes
+
+  - name: Start the Quadlet Service
+    ansible.builtin.systemd:
+      name: quadlet-nginx-envoy
+      state: started
+
+  handlers:
+
+  - name: Restart the Quadlet Service
+    ansible.builtin.systemd:
+      name: quadlet-nginx-envoy
+      state: restarted
